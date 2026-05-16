@@ -334,3 +334,19 @@ Key changes:
 - Failed emails go to a retry queue instead of being lost
 - Workers can process jobs in parallel (multiple workers = faster)
 - DB save and email are decoupled - notification exists in DB regardless of email success
+
+---
+
+# Stage 6
+
+## Priority Inbox
+
+Code is in `priority_inbox.py`. Basically I fetch notifications from the API and rank them using a score thats based on type weight + recency.
+
+Weights: Placement = 3, Result = 2, Event = 1
+
+Score = weight * 1 billion + unix timestamp of the notification
+
+So all placements come before results which come before events, and within the same type newer ones rank higher.
+
+Used pythons `heapq.nlargest()` to pick top N efficiently without sorting the entire list. If new notifications keep streaming in we can maintain a min-heap of size N - only swap out the min element when something with higher priority arrives. This way we dont re-sort everything each time.
